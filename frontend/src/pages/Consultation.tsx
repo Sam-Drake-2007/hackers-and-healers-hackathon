@@ -159,7 +159,7 @@ export const Consultation: React.FC = () => {
           >
             {/* Simple microphone or sound wave icon inside the orb */}
             <img
-              src="src/assets/logo-health.png"
+              src="./public/logo-health.png"
               height="auto"
               width="300px"
               alt="AI Voice Assistant"

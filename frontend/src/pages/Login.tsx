@@ -127,7 +127,7 @@ export const Login: React.FC = () => {
           }}
         >
           <img
-            src="src/assets/logo-health.png"
+            src="./public/logo-health.png"
             height="auto"
             width="250px"
             alt="Clinic Logo"
