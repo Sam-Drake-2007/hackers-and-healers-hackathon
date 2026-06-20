@@ -1,15 +1,124 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
-  --color-bg: #0b0b0f;
-  --color-surface: #16161d;
-  --color-text: #e8e8ea;
-  --color-primary: #6366f1;
+  /* =========================================
+     Base Color Palette (Literal Variables)
+     ========================================= */
+  --color-white: #ffffff;
 
-  /* Radii */
-  --radius-card: 0.75rem;
+  /* Pastels (Blues & Greens) */
+  --color-pastel-blue: #d4edf6;
+  --color-pastel-teal: #c4f0ed;
+  --color-pastel-mint: #c9f4e4;
+  --color-pastel-light-green: #bef4d5;
+  --color-pastel-green: #b2f2c3;
 
-  /* Fonts */
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  /* Greys */
+  --color-grey-50: #f9f9f9;
+  --color-grey-200: #e5e6e7;
+  --color-grey-500: #a6a4a4;
+  --color-grey-700: #6b6a6b;
+  --color-grey-900: #2a2526;
+
+  /* =========================================
+     Semantic Colors (Functional Variables)
+     ========================================= */
+  /* Primary Action Colors (Using the strongest pastel) */
+  --color-primary: var(--color-pastel-green);
+  --color-primary-hover: var(--color-pastel-mint);
+
+  /* Secondary / Complementary Colors */
+  --color-secondary: var(--color-grey-900);
+  --color-secondary-muted: var(--color-grey-500);
+
+  /* Accent / Highlight Colors */
+  --color-accent: var(--color-pastel-blue);
+
+  /* Backgrounds & Surfaces */
+  --bg-main: var(--color-grey-50); /* Soft grey background for the app */
+  --bg-surface: var(
+    --color-white
+  ); /* Pure white for cards to pop against bg-main */
+  --bg-highlight: var(--color-pastel-teal);
+
+  /* Typography */
+  --text-primary: var(--color-grey-900); /* Darkest grey for main text */
+  --text-secondary: var(--color-grey-700); /* Lighter grey for subtitles */
+  --text-on-primary: var(
+    --color-grey-900
+  ); /* Dark text on pastel buttons for contrast */
+  --text-inverse: var(--color-white);
+
+  /* Borders & Dividers */
+  --border-subtle: var(--color-grey-200);
+  --border-focus: var(--color-pastel-mint);
+
+  /* =========================================
+     Typography Tokens
+     ========================================= */
+  --font-body: "Figtree", "Nunito Sans", "SN Pro", "Pliant", sans-serif;
+  --font-heading: "Noto Sans Display", sans-serif;
+
+  /* =========================================
+     Base Spacing & Radii
+     ========================================= */
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --radius-md: 8px;
+  --radius-full: 9999px;
+}
+
+/* =========================================
+   Base HTML Element Styling
+   ========================================= */
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  color: var(--color-secondary);
+  margin-top: 0;
+  margin-bottom: var(--spacing-md);
+  font-weight: 700;
+}
+
+/* =========================================
+   Utility Classes
+   ========================================= */
+.bg-primary {
+  background-color: var(--color-primary);
+}
+.bg-secondary {
+  background-color: var(--color-secondary);
+}
+.bg-accent {
+  background-color: var(--color-accent);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-on-primary {
+  color: var(--text-on-primary);
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+.font-body {
+  font-family: var(--font-body);
 }
