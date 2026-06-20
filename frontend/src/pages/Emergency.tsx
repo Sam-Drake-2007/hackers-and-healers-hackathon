@@ -23,9 +23,11 @@ export const Emergency: React.FC = () => {
   // provider routes to /transfer when the backend confirms completion. Guarded
   // so it fires exactly once (manual confirm, auto-escalate, StrictMode).
   const escalatedRef = useRef(false);
+  const [escalated, setEscalated] = useState(false);
   const handleConfirm = useCallback(() => {
     if (escalatedRef.current) return;
     escalatedRef.current = true;
+    setEscalated(true);
     escalateEmergency();
   }, [escalateEmergency]);
 
@@ -178,8 +180,7 @@ export const Emergency: React.FC = () => {
               marginBottom: "var(--spacing-sm)",
             }}
           >
-            Severity:{" "}
-            <strong style={{ color: "#ff6b6b" }}>{severity}</strong>
+            Severity: <strong style={{ color: "#ff6b6b" }}>{severity}</strong>
           </div>
           <div style={{ color: "var(--text-primary)", fontSize: "1rem" }}>
             {reason}
@@ -196,33 +197,35 @@ export const Emergency: React.FC = () => {
           }}
         >
           {/* Confirm Button — real emergency: finalize, email the doctor, end. */}
-          <button
-            onClick={handleConfirm}
-            className="font-body"
-            style={{
-              padding: "var(--spacing-md)",
-              backgroundColor: "#ff6b6b",
-              color: "#ffffff",
-              border: "none",
-              borderRadius: "var(--radius-md)",
-              cursor: "pointer",
-              fontWeight: 700,
-              fontSize: "1.1rem",
-              transition: "all 0.2s ease",
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.opacity = "0.9";
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.opacity = "1";
-            }}
-          >
-            Confirm Emergency — Notify Doctor & End
-          </button>
+          {!escalated && (
+            <button
+              onClick={handleConfirm}
+              className="font-body"
+              style={{
+                padding: "var(--spacing-md)",
+                backgroundColor: "#ff6b6b",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "var(--radius-md)",
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: "1.1rem",
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.opacity = "0.9";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.opacity = "1";
+              }}
+            >
+              Confirm Emergency — Notify Doctor & End
+            </button>
+          )}
 
           {/* Cancel Button (In case of accidental click) — resumes the interview.
               Only available during the false-alarm window; disappears on expiry. */}
-          {secondsLeft > 0 && (
+          {!escalated && secondsLeft > 0 && (
             <button
               onClick={handleFalseAlarm}
               className="font-body"
