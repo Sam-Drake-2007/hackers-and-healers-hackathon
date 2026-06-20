@@ -1,52 +1,76 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLiveSession } from "../live/useLiveSession"; // Adjust this import path as needed
 
 export const Consultation: React.FC = () => {
   const navigate = useNavigate();
   const notesEndRef = useRef<HTMLDivElement>(null);
 
-  // Simulated State for the AI Conversation
-  const [subtitles, setSubtitles] = useState({
-    previous: "",
-    current: "Hello! I am your virtual clinic assistant.",
+  // Initialize the live session
+  const { state, start, endSession } = useLiveSession({
+    onComplete: (record) => {
+      // Automatically transition to the next page when the backend fires "session_complete"
+      // You can pass the record through route state if needed
+      navigate("/Transfer", { state: { record } });
+    },
   });
 
-  const [notes, setNotes] = useState<string[]>([
-    "Intake initiated.",
-    "Patient identity confirmed.",
-  ]);
-  const [isSpeaking, setIsSpeaking] = useState(true);
+  const {
+    status,
+    currentModelSubtitle,
+    currentUserSubtitle,
+    notes,
+    isSpeaking,
+    emergencyAlert,
+  } = state;
 
-  // Auto-scroll notes to the bottom whenever a new note is added
+  // Format the raw multiline notes string from the backend into an array for the UI
+  const displayNotes = notes
+    ? notes.split("\n").filter((n) => n.trim() !== "")
+    : ["Intake initiated. Waiting for live transcript..."];
+
+  // Auto-scroll notes to the bottom whenever a new note is appended
   useEffect(() => {
     notesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [notes]);
+  }, [displayNotes]);
 
-  // Simulated State for the AI Conversation
-  useEffect(() => {
-    const timer1 = setTimeout(() => {
-      // Shift the current text to "previous" when new text arrives
-      setSubtitles((prev) => ({
-        previous: prev.current,
-        current:
-          "Can you tell me a little bit about why you are visiting the clinic today?",
-      }));
-      setNotes((prev) => [...prev, "Asked for primary reason for visit."]);
-    }, 3000);
-
-    const timer2 = setTimeout(() => {
-      setIsSpeaking(false);
-      setSubtitles((prev) => ({
-        previous: prev.current,
-        current: "Listening...",
-      }));
-    }, 6000);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, []);
+  // AudioContext requires a user gesture to start. If we aren't connected yet,
+  // we must show an explicit start button.
+  if (status === "idle" || status === "connecting") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          height: "100vh",
+          backgroundColor: "var(--bg-main)",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <button
+          onClick={start}
+          disabled={status === "connecting"}
+          className="font-heading"
+          style={{
+            padding: "var(--spacing-lg) 3rem",
+            backgroundColor: "var(--color-pastel-mint)",
+            color: "var(--text-on-primary)",
+            border: "none",
+            borderRadius: "var(--radius-md)",
+            cursor: status === "connecting" ? "wait" : "pointer",
+            fontWeight: 700,
+            fontSize: "1.5rem",
+            transition: "background-color 0.2s ease",
+            opacity: status === "connecting" ? 0.7 : 1,
+          }}
+        >
+          {status === "connecting"
+            ? "Connecting to Clinic..."
+            : "Start Consultation"}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -85,9 +109,10 @@ export const Consultation: React.FC = () => {
             display: "flex",
             flexDirection: "column",
             gap: "var(--spacing-sm)",
+            marginTop: "1rem",
           }}
         >
-          {notes.map((note, index) => (
+          {displayNotes.map((note, index) => (
             <div
               key={index}
               style={{
@@ -102,7 +127,7 @@ export const Consultation: React.FC = () => {
               {note}
             </div>
           ))}
-          <div ref={notesEndRef} /> {/* Invisible anchor to scroll to */}
+          <div ref={notesEndRef} />
         </div>
       </div>
 
@@ -117,9 +142,7 @@ export const Consultation: React.FC = () => {
           position: "relative",
         }}
       >
-        {/* =========================================
-            NEW: Privacy / Security Banner
-            ========================================= */}
+        {/* Privacy / Security Banner */}
         <div
           style={{
             display: "flex",
@@ -144,7 +167,6 @@ export const Consultation: React.FC = () => {
               boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
             }}
           >
-            {/* Lock Icon */}
             <svg
               width="14"
               height="14"
@@ -166,6 +188,35 @@ export const Consultation: React.FC = () => {
           </div>
         </div>
 
+        {/* Emergency Alert Banner Overlay */}
+        {emergencyAlert && (
+          <div
+            style={{
+              position: "absolute",
+              top: "80px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              backgroundColor: "var(--color-red)",
+              color: "white",
+              padding: "1rem 2rem",
+              borderRadius: "var(--radius-md)",
+              zIndex: 20,
+              boxShadow: "0 4px 12px rgba(255, 0, 0, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+            }}
+          >
+            <span style={{ fontSize: "2rem" }}>🚨</span>
+            <div>
+              <div style={{ fontWeight: "bold", textTransform: "uppercase" }}>
+                Emergency Alert - {emergencyAlert.severity}
+              </div>
+              <div>{emergencyAlert.reason}</div>
+            </div>
+          </div>
+        )}
+
         {/* AI Voice Visualizer (Centered) */}
         <div
           style={{
@@ -185,7 +236,6 @@ export const Consultation: React.FC = () => {
             `}
           </style>
 
-          {/* The AI "Orb" */}
           <div
             style={{
               width: "250px",
@@ -206,7 +256,6 @@ export const Consultation: React.FC = () => {
               overflow: "hidden",
             }}
           >
-            {/* Simple microphone or sound wave icon inside the orb */}
             <img
               src="/logo-health.png"
               height="auto"
@@ -221,33 +270,31 @@ export const Consultation: React.FC = () => {
             ========================================= */}
         <div
           style={{
-            padding: "0rem 4rem",
+            padding: "0rem 4rem 2rem 4rem",
             textAlign: "center",
             minHeight: "250px",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "flex-start" /* Pushes text to the bottom */,
+            justifyContent: "flex-end", // Push text to the bottom
             alignItems: "center",
-            gap: "0.5rem" /* Space between old and new text */,
+            gap: "1rem",
           }}
         >
-          {/* Previous Subtitle (Faded, smaller, slightly higher up) */}
+          {/* User Subtitle (Faded, smaller, slightly higher up) */}
           <p
             className="font-body"
             style={{
-              fontSize: "1.5rem",
+              fontSize: "1.2rem",
               color: "var(--text-secondary)",
-              opacity: subtitles.previous
-                ? 0.6
-                : 0 /* Hides it if there is no previous text */,
+              opacity: currentUserSubtitle ? 0.8 : 0,
               margin: 0,
               transition: "all 0.4s ease",
             }}
           >
-            {subtitles.previous}
+            {currentUserSubtitle || "..."}
           </p>
 
-          {/* Current Subtitle (Large and dark) */}
+          {/* Model Subtitle (Large and dark) */}
           <p
             className="font-body"
             style={{
@@ -258,9 +305,10 @@ export const Consultation: React.FC = () => {
               fontWeight: 600,
               margin: 0,
               transition: "color 0.8s ease",
+              minHeight: "2.5rem",
             }}
           >
-            {subtitles.current}
+            {currentModelSubtitle || (isSpeaking ? "" : "Listening...")}
           </p>
         </div>
       </div>
@@ -346,10 +394,13 @@ export const Consultation: React.FC = () => {
           🆘 Emergency Alert
         </button>
 
-        {/* Action Button 3 */}
+        {/* Action Button 3 - Now tied to the actual session ending */}
         <button
           className="font-body"
-          onClick={() => navigate("/Transfer")}
+          onClick={() => {
+            endSession(); // Fire the websocket termination
+            navigate("/Transfer"); // Manually navigate if they click early
+          }}
           style={{
             padding: "var(--spacing-md)",
             backgroundColor: "var(--color-pastel-mint)",
@@ -363,7 +414,7 @@ export const Consultation: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             gap: "0.5rem",
-            marginTop: "auto", // Pushes this button to the bottom if needed
+            marginTop: "auto",
             transition: "background-color 0.2s ease",
           }}
           onMouseOver={(e) =>
