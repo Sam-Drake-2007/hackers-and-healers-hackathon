@@ -13,6 +13,8 @@
   --color-pastel-light-green: #bef4d5;
   --color-pastel-green: #b2f2c3;
 
+  --color-red: #faa0a0;
+
   /* Greys */
   --color-grey-50: #f9f9f9;
   --color-grey-200: #e5e6e7;
@@ -59,8 +61,8 @@
   /* =========================================
      Typography Tokens
      ========================================= */
-  --font-body: "Figtree", "Nunito Sans", "SN Pro", "Pliant", sans-serif;
-  --font-heading: "Noto Sans Display", sans-serif;
+  --font-body: "Jost", sans-serif;
+  --font-heading: "Jost", sans-serif;
 
   /* =========================================
      Base Spacing & Radii
