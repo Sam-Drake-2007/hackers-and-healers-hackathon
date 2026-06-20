@@ -8,6 +8,7 @@ from gemini.live_config import build_config
 from state import SessionState
 from tools.registry import get_handler
 from documents.finalize import finalize
+from documents.deliver import deliver
 
 logger = logging.getLogger(__name__)
 
@@ -199,6 +200,7 @@ class LiveSession:
             await self._send_to_browser(
                 {"type": "session_complete", "record": self.state.record}
             )
+            await deliver(record)
         except Exception as e:
             logger.error("manual finish failed: %s", e)
             await self._send_to_browser(
