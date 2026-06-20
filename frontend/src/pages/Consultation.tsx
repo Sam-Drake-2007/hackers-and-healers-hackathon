@@ -1,20 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useLiveSession } from "../live/useLiveSession"; // Adjust this import path as needed
+import { useLiveSessionContext } from "../live/LiveSessionContext";
 
 export const Consultation: React.FC = () => {
   const navigate = useNavigate();
   const notesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize the live session
-  const { state, start, endSession, togglePause, triggerEmergency, dismissEmergency } =
-    useLiveSession({
-      onComplete: (record) => {
-        // Automatically transition to the next page when the backend fires "session_complete"
-        // You can pass the record through route state if needed
-        navigate("/Transfer", { state: { record } });
-      },
-    });
+  // Shared live session (owned by the provider so it survives navigation to
+  // the emergency page and back). Completion + emergency routing are handled
+  // by the provider.
+  const { state, start, endSession, togglePause, triggerEmergency } =
+    useLiveSessionContext();
 
   const {
     status,
@@ -23,7 +19,6 @@ export const Consultation: React.FC = () => {
     notes,
     isSpeaking,
     paused,
-    emergencyAlert,
     error,
   } = state;
 
@@ -214,49 +209,7 @@ export const Consultation: React.FC = () => {
           </div>
         )}
 
-        {/* Emergency Alert Banner Overlay */}
-        {emergencyAlert && (
-          <div
-            style={{
-              position: "absolute",
-              top: "80px",
-              left: "50%",
-              transform: "translateX(-50%)",
-              backgroundColor: "var(--color-red)",
-              color: "white",
-              padding: "1rem 2rem",
-              borderRadius: "var(--radius-md)",
-              zIndex: 20,
-              boxShadow: "0 4px 12px rgba(255, 0, 0, 0.3)",
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
-            }}
-          >
-            <span style={{ fontSize: "2rem" }}>🚨</span>
-            <div>
-              <div style={{ fontWeight: "bold", textTransform: "uppercase" }}>
-                Emergency Alert - {emergencyAlert.severity}
-              </div>
-              <div>{emergencyAlert.reason}</div>
-            </div>
-            <button
-              onClick={dismissEmergency}
-              aria-label="Dismiss emergency alert"
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "white",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-                lineHeight: 1,
-                padding: "0 0.25rem",
-              }}
-            >
-              ×
-            </button>
-          </div>
-        )}
+        {/* Emergency alerts now route to the dedicated /emergency page. */}
 
         {/* AI Voice Visualizer (Centered) */}
         <div

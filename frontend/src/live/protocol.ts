@@ -4,13 +4,19 @@ export interface EndSessionMessage {
   type: "end_session";
 }
 
-export interface EmergencyMessage {
-  type: "emergency";
-  severity: "urgent" | "critical";
-  reason: string;
+// Resolve an active emergency: resume = false alarm, escalate = real emergency.
+export interface ResumeMessage {
+  type: "resume";
 }
 
-export type ClientMessage = EndSessionMessage | EmergencyMessage;
+export interface EscalateMessage {
+  type: "escalate";
+}
+
+export type ClientMessage =
+  | EndSessionMessage
+  | ResumeMessage
+  | EscalateMessage;
 
 // ── Inbound (backend → browser) ───────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ from state import SessionState
 from tools.registry import get_handler
 from documents.finalize import finalize
 from documents.deliver import deliver
-from tools.emergency import run_emergency
+from tools.emergency import escalate
 
 logger = logging.getLogger(__name__)
 
@@ -111,15 +111,20 @@ class LiveSession:
                 elif control.get("type") == "end_session":
                     await self._run_manual_finish()
                     break
-                elif control.get("type") == "emergency":
-                    reason = control.get(
-                        "reason", "Emergency flagged manually during consultation."
-                    )
-                    severity = control.get("severity", "critical")
-                    await run_emergency(
-                        reason, severity, self.state, self._send_to_browser
-                    )
-                    break
+                elif control.get("type") == "resume":
+                    # False alarm — release any blocked emergency tool so the
+                    # model resumes. (Manual emergencies have no blocked tool;
+                    # the browser simply un-pauses locally.)
+                    self.state.emergency_resolution = "resume"
+                    self.state.resume_event.set()
+                elif control.get("type") == "escalate":
+                    # Confirmed emergency. If a model tool call is blocked, let
+                    # it run the escalation; otherwise (manual) escalate here.
+                    self.state.emergency_resolution = "escalate"
+                    self.state.resume_event.set()
+                    if not self.state.emergency_active:
+                        await escalate(self.state, self._send_to_browser)
+                        break
 
     # ------------------------------------------------------------------
     # Downlink: Gemini → browser

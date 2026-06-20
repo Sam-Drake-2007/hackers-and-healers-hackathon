@@ -1,14 +1,54 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLiveSessionContext } from "../live/LiveSessionContext";
+
+// How long the patient has to cancel a false alarm before it auto-escalates.
+const FALSE_ALARM_WINDOW_SECONDS = 10;
 
 export const Emergency: React.FC = () => {
   const navigate = useNavigate();
+  const { state, resumeFromEmergency, escalateEmergency } =
+    useLiveSessionContext();
+  const { emergencyAlert } = state;
+
+  // Metadata from the action that triggered this page.
+  const severity = emergencyAlert?.severity ?? "critical";
+  const reason = emergencyAlert?.reason ?? "Emergency flagged.";
+
+  // Countdown for the false-alarm window. When it hits 0 the alert is treated
+  // as real and auto-escalates.
+  const [secondsLeft, setSecondsLeft] = useState(FALSE_ALARM_WINDOW_SECONDS);
+
+  // Confirmed emergency: finalize + email the record and end the session. The
+  // provider routes to /transfer when the backend confirms completion. Guarded
+  // so it fires exactly once (manual confirm, auto-escalate, StrictMode).
+  const escalatedRef = useRef(false);
+  const handleConfirm = useCallback(() => {
+    if (escalatedRef.current) return;
+    escalatedRef.current = true;
+    escalateEmergency();
+  }, [escalateEmergency]);
+
+  useEffect(() => {
+    if (secondsLeft <= 0) {
+      handleConfirm(); // window elapsed without a cancel → real emergency
+      return;
+    }
+    const id = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [secondsLeft, handleConfirm]);
 
   // Simulate notifying the staff dashboard when this page loads
   useEffect(() => {
-    console.log("🚨 EMERGENCY ALERT TRIGGERED! 🚨");
+    console.log("🚨 EMERGENCY ALERT TRIGGERED! 🚨", { severity, reason });
     console.log("Notifying staff immediately");
-  }, []);
+  }, [severity, reason]);
+
+  // False alarm: resume the paused interview and return to the consultation.
+  const handleFalseAlarm = () => {
+    resumeFromEmergency();
+    navigate("/consultation");
+  };
 
   return (
     <div
@@ -116,6 +156,36 @@ export const Emergency: React.FC = () => {
           Please remain where you are. Help is on the way.
         </h2>
 
+        {/* Metadata from the triggering action */}
+        <div
+          className="font-body"
+          style={{
+            backgroundColor: "var(--bg-main)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-md)",
+            padding: "var(--spacing-md)",
+            marginBottom: "var(--spacing-lg)",
+            width: "100%",
+            textAlign: "left",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "0.8rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              color: "var(--text-secondary)",
+              marginBottom: "var(--spacing-sm)",
+            }}
+          >
+            Severity:{" "}
+            <strong style={{ color: "#ff6b6b" }}>{severity}</strong>
+          </div>
+          <div style={{ color: "var(--text-primary)", fontSize: "1rem" }}>
+            {reason}
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div
           style={{
@@ -125,32 +195,60 @@ export const Emergency: React.FC = () => {
             width: "100%",
           }}
         >
-          {/* Cancel Button (In case of accidental click) */}
+          {/* Confirm Button — real emergency: finalize, email the doctor, end. */}
           <button
-            onClick={() => navigate("/Consultation")}
+            onClick={handleConfirm}
             className="font-body"
             style={{
               padding: "var(--spacing-md)",
-              backgroundColor: "transparent",
-              color: "var(--text-secondary)",
-              border: "2px solid var(--border-subtle)",
+              backgroundColor: "#ff6b6b",
+              color: "#ffffff",
+              border: "none",
               borderRadius: "var(--radius-md)",
               cursor: "pointer",
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: "1.1rem",
               transition: "all 0.2s ease",
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = "var(--color-grey-200)";
-              e.currentTarget.style.color = "var(--text-primary)";
+              e.currentTarget.style.opacity = "0.9";
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "var(--text-secondary)";
+              e.currentTarget.style.opacity = "1";
             }}
           >
-            Cancel False Alarm
+            Confirm Emergency — Notify Doctor & End
           </button>
+
+          {/* Cancel Button (In case of accidental click) — resumes the interview.
+              Only available during the false-alarm window; disappears on expiry. */}
+          {secondsLeft > 0 && (
+            <button
+              onClick={handleFalseAlarm}
+              className="font-body"
+              style={{
+                padding: "var(--spacing-md)",
+                backgroundColor: "transparent",
+                color: "var(--text-secondary)",
+                border: "2px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                transition: "all 0.2s ease",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--color-grey-200)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
+            >
+              Cancel False Alarm — Resume Interview ({secondsLeft}s)
+            </button>
+          )}
         </div>
       </div>
     </div>

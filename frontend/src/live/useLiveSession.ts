@@ -206,11 +206,16 @@ export function useLiveSession(options?: {
             };
 
           case "emergency_alert":
+            // Pause locally so mic uplink and AI playback stop while the
+            // emergency is reviewed. The provider routes to the /emergency page.
+            pausedRef.current = true;
+            flushPlayback();
             return {
               ...s,
               rawEvents,
               emergencyAlert: { severity: msg.severity, reason: msg.reason },
               activeToolCall: null,
+              paused: true,
             };
 
           case "session_complete":
@@ -349,24 +354,33 @@ export function useLiveSession(options?: {
     });
   }, [flushPlayback]);
 
-  // Manually trigger the backend emergency escalation. The backend finalizes
-  // the record, emails the doctor, and echoes back emergency_alert +
-  // session_complete. We also set the banner locally for instant feedback.
+  // Manually raise an emergency. Pauses the session locally and sets the banner;
+  // the provider observes emergencyAlert and routes to the /emergency page.
+  // Nothing is finalized yet — the patient resolves it there (resume/escalate).
   const triggerEmergency = useCallback(
     (reason = "Emergency flagged manually during consultation.") => {
-      wsRef.current?.send(
-        JSON.stringify({ type: "emergency", severity: "critical", reason }),
-      );
+      pausedRef.current = true;
+      flushPlayback();
       setState((s) => ({
         ...s,
+        paused: true,
         emergencyAlert: { severity: "critical", reason },
       }));
     },
-    [],
+    [flushPlayback],
   );
 
-  const dismissEmergency = useCallback(() => {
-    setState((s) => ({ ...s, emergencyAlert: null }));
+  // False alarm — tell the backend to release the paused model and resume.
+  const resumeFromEmergency = useCallback(() => {
+    wsRef.current?.send(JSON.stringify({ type: "resume" }));
+    pausedRef.current = false;
+    setState((s) => ({ ...s, paused: false, emergencyAlert: null }));
+  }, []);
+
+  // Confirmed emergency — the backend finalizes the record, emails the doctor,
+  // and ends the session (session_complete then drives navigation).
+  const escalateEmergency = useCallback(() => {
+    wsRef.current?.send(JSON.stringify({ type: "escalate" }));
   }, []);
 
   // Clean up on unmount.
@@ -379,6 +393,7 @@ export function useLiveSession(options?: {
     stop,
     togglePause,
     triggerEmergency,
-    dismissEmergency,
+    resumeFromEmergency,
+    escalateEmergency,
   };
 }

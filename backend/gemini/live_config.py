@@ -58,7 +58,9 @@ _EMERGENCY_ALERT_DECL = types.FunctionDeclaration(
         "Call this immediately if the patient describes symptoms of a medical emergency — "
         "chest pain, difficulty breathing, stroke symptoms, severe bleeding, loss of consciousness, "
         "suicidal ideation, or any other life-threatening situation. "
-        "This alerts the care team instantly and ends the session. Do not speak after calling this."
+        "This alerts the care team instantly and pauses the interview while the situation is "
+        "reviewed. Do not speak after calling this — wait for the tool to return. If it returns "
+        "indicating a false alarm, resume the interview naturally."
     ),
     parameters=types.Schema(
         type=types.Type.OBJECT,

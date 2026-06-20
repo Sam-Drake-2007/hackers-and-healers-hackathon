@@ -44,7 +44,6 @@ export const Login: React.FC = () => {
     // Persist the recipient so the live session can send it to the backend,
     // which uses it as the patient-record email recipient.
     localStorage.setItem("doctorEmail", adminEmail);
-    alert(`Records will be sent to: ${adminEmail}`);
     setIsSettingsOpen(false); // Close the modal after submitting
   };
 
