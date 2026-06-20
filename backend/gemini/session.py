@@ -26,6 +26,12 @@ class LiveSession:
             model=config.MODEL_ID,
             config=build_config(),
         ) as gemini_session:
+            # Prompt the model to open with a greeting.
+            await gemini_session.send_client_content(
+                turns={"parts": [{"text": "Please begin the patient intake interview."}]},
+                turn_complete=True,
+            )
+
             uplink = asyncio.create_task(self._uplink(gemini_session))
             downlink = asyncio.create_task(self._downlink(gemini_session))
             self._tasks = [uplink, downlink]
@@ -156,6 +162,10 @@ class LiveSession:
         responses: list[types.FunctionResponse] = []
 
         for fc in function_calls:
+            await self._send_to_browser(
+                {"type": "tool_call", "name": fc.name, "args": fc.args or {}}
+            )
+
             handler = get_handler(fc.name)
             if handler is None:
                 logger.warning("unknown tool: %s", fc.name)

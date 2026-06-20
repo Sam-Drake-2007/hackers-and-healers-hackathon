@@ -53,6 +53,9 @@
   --border-subtle: var(--color-grey-200);
   --border-focus: var(--color-pastel-mint);
 
+  /* Status */
+  --color-error: #dc2626;
+
   /* =========================================
      Typography Tokens
      ========================================= */
@@ -121,4 +124,22 @@ h6 {
 }
 .font-body {
   font-family: var(--font-body);
+}
+
+/* Surface & border semantic utilities */
+.bg-main {
+  background-color: var(--bg-main);
+}
+.bg-surface {
+  background-color: var(--bg-surface);
+}
+.bg-highlight {
+  background-color: var(--bg-highlight);
+}
+.border-subtle {
+  border-color: var(--border-subtle);
+}
+
+.text-error {
+  color: var(--color-error);
 }
