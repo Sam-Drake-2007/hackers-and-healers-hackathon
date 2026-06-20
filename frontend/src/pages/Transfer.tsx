@@ -1,10 +1,11 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export const Transfer: React.FC = () => {
   // Catch the state passed from the navigate() function on the previous page
   const location = useLocation();
   const patientName = location.state?.patientName || "there";
+  const navigate = useNavigate();
 
   return (
     <div
@@ -90,6 +91,48 @@ export const Transfer: React.FC = () => {
           Our conversation has been documented and sent privately to your
           doctor. Your in-person appointment will begin shortly.
         </p>
+        {/* Return Home Button */}
+        <button
+          onClick={() => navigate("/")} // Assumes your login page is at the root '/'
+          className="font-body bg-primary"
+          style={{
+            padding: "var(--spacing-md) var(--spacing-lg)",
+            color: "var(--text-on-primary)",
+            fontWeight: 700,
+            border: "none",
+            borderRadius: "var(--radius-md)",
+            cursor: "pointer",
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.5rem",
+            transition: "background-color 0.2s ease",
+          }}
+          onMouseOver={(e) =>
+            (e.currentTarget.style.backgroundColor =
+              "var(--color-primary-hover)")
+          }
+          onMouseOut={(e) =>
+            (e.currentTarget.style.backgroundColor = "var(--color-primary)")
+          }
+        >
+          {/* Home Arrow SVG */}
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Return to Home
+        </button>
       </div>
     </div>
   );
