@@ -7,13 +7,14 @@ export const Consultation: React.FC = () => {
   const notesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize the live session
-  const { state, start, endSession } = useLiveSession({
-    onComplete: (record) => {
-      // Automatically transition to the next page when the backend fires "session_complete"
-      // You can pass the record through route state if needed
-      navigate("/Transfer", { state: { record } });
-    },
-  });
+  const { state, start, endSession, togglePause, triggerEmergency, dismissEmergency } =
+    useLiveSession({
+      onComplete: (record) => {
+        // Automatically transition to the next page when the backend fires "session_complete"
+        // You can pass the record through route state if needed
+        navigate("/Transfer", { state: { record } });
+      },
+    });
 
   const {
     status,
@@ -21,7 +22,9 @@ export const Consultation: React.FC = () => {
     currentUserSubtitle,
     notes,
     isSpeaking,
+    paused,
     emergencyAlert,
+    error,
   } = state;
 
   // Format the raw multiline notes string from the backend into an array for the UI
@@ -188,6 +191,29 @@ export const Consultation: React.FC = () => {
           </div>
         </div>
 
+        {/* Error Banner Overlay (e.g. email delivery failures) */}
+        {error && (
+          <div
+            className="font-body"
+            style={{
+              position: "absolute",
+              top: "var(--spacing-md)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              backgroundColor: "var(--color-red)",
+              color: "white",
+              padding: "var(--spacing-sm) var(--spacing-md)",
+              borderRadius: "var(--radius-md)",
+              zIndex: 30,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              maxWidth: "90%",
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
         {/* Emergency Alert Banner Overlay */}
         {emergencyAlert && (
           <div
@@ -214,6 +240,21 @@ export const Consultation: React.FC = () => {
               </div>
               <div>{emergencyAlert.reason}</div>
             </div>
+            <button
+              onClick={dismissEmergency}
+              aria-label="Dismiss emergency alert"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "white",
+                fontSize: "1.5rem",
+                cursor: "pointer",
+                lineHeight: 1,
+                padding: "0 0.25rem",
+              }}
+            >
+              ×
+            </button>
           </div>
         )}
 
@@ -340,12 +381,15 @@ export const Consultation: React.FC = () => {
           Quick Actions
         </h3>
 
-        {/* Action Button 1 */}
+        {/* Action Button 1 — Pause / Resume the live session */}
         <button
           className="font-body text-primary"
+          onClick={togglePause}
           style={{
             padding: "var(--spacing-md)",
-            backgroundColor: "var(--bg-main)",
+            backgroundColor: paused
+              ? "var(--color-pastel-blue)"
+              : "var(--bg-main)",
             border: "1px solid var(--border-subtle)",
             borderRadius: "var(--radius-md)",
             cursor: "pointer",
@@ -361,15 +405,22 @@ export const Consultation: React.FC = () => {
             (e.currentTarget.style.backgroundColor = "var(--color-pastel-blue)")
           }
           onMouseOut={(e) =>
-            (e.currentTarget.style.backgroundColor = "var(--bg-main)")
+            (e.currentTarget.style.backgroundColor = paused
+              ? "var(--color-pastel-blue)"
+              : "var(--bg-main)")
           }
         >
-          ⏸️ Pause Consultation
+          {paused ? "▶️ Resume Consultation" : "⏸️ Pause Consultation"}
         </button>
 
-        {/* Action Button 2 */}
+        {/* Action Button 2 — Manually raise the emergency banner */}
         <button
           className="font-body text-primary"
+          onClick={() =>
+            triggerEmergency(
+              "Emergency flagged manually during consultation — clinician attention required.",
+            )
+          }
           style={{
             padding: "var(--spacing-md)",
             backgroundColor: "var(--bg-main)",

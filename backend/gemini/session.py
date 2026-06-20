@@ -9,6 +9,7 @@ from state import SessionState
 from tools.registry import get_handler
 from documents.finalize import finalize
 from documents.deliver import deliver
+from tools.emergency import run_emergency
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +111,15 @@ class LiveSession:
                 elif control.get("type") == "end_session":
                     await self._run_manual_finish()
                     break
+                elif control.get("type") == "emergency":
+                    reason = control.get(
+                        "reason", "Emergency flagged manually during consultation."
+                    )
+                    severity = control.get("severity", "critical")
+                    await run_emergency(
+                        reason, severity, self.state, self._send_to_browser
+                    )
+                    break
 
     # ------------------------------------------------------------------
     # Downlink: Gemini → browser
@@ -201,10 +211,15 @@ class LiveSession:
         try:
             record = await finalize(self.state.transcript, self.state.notes)
             self.state.record = record.model_dump()
+            # Deliver before announcing completion — the browser navigates away
+            # on session_complete, closing the WS, which would otherwise cancel
+            # this mid-send.
+            await deliver(
+                record, self.state.recipient_email, notify=self._send_to_browser
+            )
             await self._send_to_browser(
                 {"type": "session_complete", "record": self.state.record}
             )
-            await deliver(record, self.state.recipient_email)
         except Exception as e:
             logger.error("manual finish failed: %s", e)
             await self._send_to_browser(

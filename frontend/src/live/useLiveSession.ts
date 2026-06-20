@@ -30,6 +30,8 @@ export interface LiveSessionState {
   record: PatientRecord | null;
   /** True while 24 kHz audio chunks from the model are playing. */
   isSpeaking: boolean;
+  /** True while the consultation is paused — mic uplink and AI playback are suspended. */
+  paused: boolean;
   /** The most recent tool call fired by the model, or null when idle. */
   activeToolCall: { name: string; args: Record<string, unknown> } | null;
   /** Set when the model triggers an emergency alert — null otherwise. */
@@ -51,6 +53,7 @@ const INITIAL_STATE: LiveSessionState = {
   notes: "",
   record: null,
   isSpeaking: false,
+  paused: false,
   activeToolCall: null,
   emergencyAlert: null,
   error: null,
@@ -75,12 +78,16 @@ export function useLiveSession(options?: {
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const playbackQueueRef = useRef<AudioBufferSourceNode[]>([]);
   const nextPlayTimeRef = useRef<number>(0);
+  // When paused, we stop forwarding mic audio and drop incoming AI audio.
+  const pausedRef = useRef(false);
 
   // ── Audio playback helpers ──────────────────────────────────────────────────
 
   const scheduleAudio = useCallback((raw: ArrayBuffer) => {
     const ctx = audioCtxRef.current;
     if (!ctx) return;
+    // Drop AI audio that arrives while paused so the model goes silent.
+    if (pausedRef.current) return;
 
     const int16 = new Int16Array(raw);
     const float32 = new Float32Array(int16.length);
@@ -230,6 +237,7 @@ export function useLiveSession(options?: {
   // ── Start / stop ────────────────────────────────────────────────────────────
 
   const stop = useCallback(() => {
+    pausedRef.current = false;
     flushPlayback();
 
     wsRef.current?.close();
@@ -250,6 +258,7 @@ export function useLiveSession(options?: {
   const start = useCallback(async () => {
     if (wsRef.current) return;
 
+    pausedRef.current = false;
     setState({ ...INITIAL_STATE, status: "connecting" });
 
     try {
@@ -292,7 +301,7 @@ export function useLiveSession(options?: {
         }
         // Wire worklet → WS after socket is open.
         workletNode.port.onmessage = (e: MessageEvent<ArrayBuffer>) => {
-          if (ws.readyState === WebSocket.OPEN) {
+          if (!pausedRef.current && ws.readyState === WebSocket.OPEN) {
             ws.send(e.data);
           }
         };
@@ -330,8 +339,46 @@ export function useLiveSession(options?: {
     wsRef.current?.send(JSON.stringify({ type: "end_session" }));
   }, []);
 
+  // Pause/resume the consultation locally: suspend mic uplink and AI playback.
+  const togglePause = useCallback(() => {
+    setState((s) => {
+      const paused = !s.paused;
+      pausedRef.current = paused;
+      if (paused) flushPlayback(); // Cut off any AI audio mid-sentence.
+      return { ...s, paused, isSpeaking: paused ? false : s.isSpeaking };
+    });
+  }, [flushPlayback]);
+
+  // Manually trigger the backend emergency escalation. The backend finalizes
+  // the record, emails the doctor, and echoes back emergency_alert +
+  // session_complete. We also set the banner locally for instant feedback.
+  const triggerEmergency = useCallback(
+    (reason = "Emergency flagged manually during consultation.") => {
+      wsRef.current?.send(
+        JSON.stringify({ type: "emergency", severity: "critical", reason }),
+      );
+      setState((s) => ({
+        ...s,
+        emergencyAlert: { severity: "critical", reason },
+      }));
+    },
+    [],
+  );
+
+  const dismissEmergency = useCallback(() => {
+    setState((s) => ({ ...s, emergencyAlert: null }));
+  }, []);
+
   // Clean up on unmount.
   useEffect(() => () => stop(), [stop]);
 
-  return { state, start, endSession, stop };
+  return {
+    state,
+    start,
+    endSession,
+    stop,
+    togglePause,
+    triggerEmergency,
+    dismissEmergency,
+  };
 }

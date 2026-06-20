@@ -4,7 +4,13 @@ export interface EndSessionMessage {
   type: "end_session";
 }
 
-export type ClientMessage = EndSessionMessage;
+export interface EmergencyMessage {
+  type: "emergency";
+  severity: "urgent" | "critical";
+  reason: string;
+}
+
+export type ClientMessage = EndSessionMessage | EmergencyMessage;
 
 // ── Inbound (backend → browser) ───────────────────────────────────────────────
 
