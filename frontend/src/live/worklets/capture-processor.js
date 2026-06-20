@@ -2,29 +2,25 @@
 // Receives float32 PCM at the AudioContext rate, downsamples to 16 kHz via
 // linear interpolation, converts to Int16, and posts each chunk to the main
 // thread as a transferred ArrayBuffer (zero-copy).
-
-declare const sampleRate: number;
-declare class AudioWorkletProcessor {
-  readonly port: MessagePort;
-  process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Record<string, Float32Array>): boolean;
-}
-declare function registerProcessor(name: string, ctor: typeof AudioWorkletProcessor): void;
+//
+// Plain JS (not TS) on purpose: this file is loaded directly by the browser
+// via audioWorklet.addModule(), so it must be valid JavaScript in production
+// where Vite emits it as a static asset without transpilation. `sampleRate`,
+// `AudioWorkletProcessor`, and `registerProcessor` are globals provided by the
+// AudioWorklet runtime.
 
 class CaptureProcessor extends AudioWorkletProcessor {
-  private _ratio: number;
-  private _phase: number;
-
   constructor() {
     super();
     this._ratio = sampleRate / 16000;
     this._phase = 0;
   }
 
-  process(inputs: Float32Array[][]): boolean {
+  process(inputs) {
     const channel = inputs[0]?.[0];
     if (!channel || channel.length === 0) return true;
 
-    const out: number[] = [];
+    const out = [];
     let phase = this._phase;
 
     while (phase < channel.length) {

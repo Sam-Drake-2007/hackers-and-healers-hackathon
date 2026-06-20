@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import captureProcessorUrl from "./worklets/capture-processor.ts?url";
+import captureProcessorUrl from "./worklets/capture-processor.js?url";
 import type {
   PatientRecord,
   RawEvent,
