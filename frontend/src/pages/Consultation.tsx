@@ -325,7 +325,7 @@ export const Consultation: React.FC = () => {
             (e.currentTarget.style.backgroundColor = "var(--color-primary)")
           }
         >
-          Finish & Send to Doctor
+          Finish Consultation
         </button>
       </div>
     </div>

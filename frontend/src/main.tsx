@@ -7,6 +7,7 @@ import { Login } from "./pages/Login";
 import { Consultation } from "./pages/Consultation";
 import { Transfer } from "./pages/Transfer";
 import DevLive from "./pages/_DevLive";
+import { NotFound } from "./pages/NotFound";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/consultation" element={<Consultation />} />
           <Route path="/transfer" element={<Transfer />} />
           <Route path="/_dev/live" element={<DevLive />} />
+          <Route path="/*" element={<NotFound />} />
           {/* Add future pages here:
           <Route path="/example" element={<ExamplePage />} /> */}
         </Route>
