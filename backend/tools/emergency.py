@@ -3,7 +3,7 @@ from google.genai import types
 from state import SessionState
 from tools.registry import register
 from documents.finalize import finalize
-from documents.deliver import deliver
+from documents.deliver import deliver, deliver_emergency
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +15,11 @@ async def escalate(state: SessionState, send_to_browser: callable) -> None:
     try:
         record = await finalize(state.transcript, state.notes)
         state.record = record.model_dump()
-        # Deliver before announcing completion — the browser navigates away on
+        # For emergencies, use the emergency delivery path so the doctor
+        # receives an appropriately labeled urgent email. Deliver before
+        # announcing completion — the browser navigates away on
         # session_complete, which would otherwise cancel this mid-send.
-        await deliver(record, state.recipient_email, notify=send_to_browser)
+        await deliver_emergency(record, state.recipient_email, notify=send_to_browser)
         await send_to_browser({"type": "session_complete", "record": state.record})
     except Exception as e:
         logger.error("emergency escalate failed: %s", e)

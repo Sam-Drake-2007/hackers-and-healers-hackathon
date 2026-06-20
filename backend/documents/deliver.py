@@ -4,7 +4,7 @@ import config
 from documents.record import PatientRecord
 from documents.render import render_html
 from documents.pdf import render_pdf
-from documents.email import send_record_email
+from documents.email import send_record_email, send_emergency_email
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,45 @@ async def deliver(
     except Exception as e:
         logger.exception("Failed to deliver patient record")
         if notify:
+            await notify({"type": "error", "message": f"Email delivery failed: {e}"})
+
+
+async def deliver_emergency(
+    record: PatientRecord,
+    recipient: str | None = None,
+    notify: Callable[[dict], Awaitable[None]] | None = None,
+) -> None:
+    """Render the patient record and send an emergency email to the doctor.
+
+    This mirrors `deliver` but uses the emergency email path so messages are
+    clearly labeled and prioritized by the recipient.
+    """
+
+    async def fail(reason: str) -> None:
+        logger.warning("Emergency delivery skipped: %s", reason)
+        if notify:
+            await notify({"type": "error", "message": f"Email not sent: {reason}"})
+
+    recipient = recipient or config.DOCTOR_EMAIL
+
+    if not recipient:
+        await fail("no recipient email set (set one in Settings)")
+        return
+    if not config.RESEND_API_KEY:
+        await fail("RESEND_API_KEY not configured on the server")
+        return
+    if not config.FROM_EMAIL:
+        await fail("FROM_EMAIL not configured on the server")
+        return
+
+    try:
+        html = render_html(record)
+        pdf = await render_pdf(html)
+        await send_emergency_email(pdf, recipient)
+        logger.info("Emergency patient record delivered to %s", recipient)
+    except Exception as e:
+        logger.exception("Failed to deliver emergency patient record")
+        if notify:
             await notify(
-                {"type": "error", "message": f"Email delivery failed: {e}"}
+                {"type": "error", "message": f"Emergency email delivery failed: {e}"}
             )
