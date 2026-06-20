@@ -2,13 +2,15 @@ import resend
 import config
 
 
-async def send_record_email(pdf: bytes, subject: str = "Patient Intake Record") -> None:
-    """Email the PDF record to the doctor defined in config.DOCTOR_EMAIL."""
+async def send_record_email(
+    pdf: bytes, recipient: str, subject: str = "Patient Intake Record"
+) -> None:
+    """Email the PDF record to the given recipient."""
     resend.api_key = config.RESEND_API_KEY
 
     params: resend.Emails.SendParams = {
         "from": config.FROM_EMAIL,
-        "to": [config.DOCTOR_EMAIL],
+        "to": [recipient],
         "subject": subject,
         "html": (
             "<p>Please find the attached patient intake record generated from "

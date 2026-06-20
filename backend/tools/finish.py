@@ -18,7 +18,7 @@ async def finish_interview(
         record = await finalize(state.transcript, state.notes)
         state.record = record.model_dump()
         await send_to_browser({"type": "session_complete", "record": state.record})
-        await deliver(record)
+        await deliver(record, state.recipient_email)
     except Exception as e:
         logger.error("finalize failed: %s", e)
         await send_to_browser({"type": "error", "message": f"Could not finalize record: {e}"})

@@ -284,6 +284,12 @@ export function useLiveSession(options?: {
 
       ws.onopen = () => {
         setState((s) => ({ ...s, status: "connected" }));
+        // Tell the backend where to send the patient record. Set via the
+        // Settings modal on the login page and persisted to localStorage.
+        const doctorEmail = localStorage.getItem("doctorEmail");
+        if (doctorEmail) {
+          ws.send(JSON.stringify({ type: "config", doctorEmail }));
+        }
         // Wire worklet → WS after socket is open.
         workletNode.port.onmessage = (e: MessageEvent<ArrayBuffer>) => {
           if (ws.readyState === WebSocket.OPEN) {

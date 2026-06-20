@@ -16,7 +16,10 @@ export const Login: React.FC = () => {
 
   // 2. NEW: State to control the Settings Modal
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [adminEmail, setAdminEmail] = useState("");
+  // Persisted so the live session (on a later page) can pick it up.
+  const [adminEmail, setAdminEmail] = useState(
+    () => localStorage.getItem("doctorEmail") ?? "",
+  );
 
   const navigate = useNavigate();
 
@@ -38,10 +41,11 @@ export const Login: React.FC = () => {
   // 3. NEW: Handle the Admin Email Submission
   const handleAdminSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Admin email submitted:", adminEmail);
-    alert(`Invite sent to: ${adminEmail}`);
+    // Persist the recipient so the live session can send it to the backend,
+    // which uses it as the patient-record email recipient.
+    localStorage.setItem("doctorEmail", adminEmail);
+    alert(`Records will be sent to: ${adminEmail}`);
     setIsSettingsOpen(false); // Close the modal after submitting
-    setAdminEmail(""); // Clear the input
   };
 
   return (

@@ -103,7 +103,11 @@ class LiveSession:
                     control = json.loads(raw_text)
                 except json.JSONDecodeError:
                     continue
-                if control.get("type") == "end_session":
+                if control.get("type") == "config":
+                    email = control.get("doctorEmail")
+                    if email:
+                        self.state.recipient_email = email
+                elif control.get("type") == "end_session":
                     await self._run_manual_finish()
                     break
 
@@ -200,7 +204,7 @@ class LiveSession:
             await self._send_to_browser(
                 {"type": "session_complete", "record": self.state.record}
             )
-            await deliver(record)
+            await deliver(record, self.state.recipient_email)
         except Exception as e:
             logger.error("manual finish failed: %s", e)
             await self._send_to_browser(
