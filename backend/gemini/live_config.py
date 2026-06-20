@@ -52,6 +52,34 @@ _FINISH_INTERVIEW_DECL = types.FunctionDeclaration(
     ),
 )
 
+_EMERGENCY_ALERT_DECL = types.FunctionDeclaration(
+    name="emergency_alert",
+    description=(
+        "Call this immediately if the patient describes symptoms of a medical emergency — "
+        "chest pain, difficulty breathing, stroke symptoms, severe bleeding, loss of consciousness, "
+        "suicidal ideation, or any other life-threatening situation. "
+        "This alerts the care team instantly and ends the session. Do not speak after calling this."
+    ),
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "reason": types.Schema(
+                type=types.Type.STRING,
+                description="Brief clinical reason for the alert (e.g. 'chest pain with left arm radiation').",
+            ),
+            "severity": types.Schema(
+                type=types.Type.STRING,
+                enum=["urgent", "critical"],
+                description="urgent = needs immediate attention; critical = life-threatening.",
+            ),
+        },
+        required=["reason", "severity"],
+    ),
+    # Default behavior is BLOCKING: model pauses during tool execution.
+    # Combined with state.finished = True in the handler, the session is
+    # torn down before Gemini can send any further audio.
+)
+
 
 def build_config() -> types.LiveConnectConfig:
     return types.LiveConnectConfig(
@@ -61,7 +89,11 @@ def build_config() -> types.LiveConnectConfig:
         system_instruction=SYSTEM_PROMPT,
         tools=[
             types.Tool(
-                function_declarations=[_RECORD_NOTES_DECL, _FINISH_INTERVIEW_DECL]
+                function_declarations=[
+                    _RECORD_NOTES_DECL,
+                    _FINISH_INTERVIEW_DECL,
+                    _EMERGENCY_ALERT_DECL,
+                ]
             )
         ],
     )

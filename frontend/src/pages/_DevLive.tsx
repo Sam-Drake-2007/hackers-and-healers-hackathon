@@ -134,6 +134,8 @@ export default function DevLive() {
     notes,
     record,
     isSpeaking,
+    activeToolCall,
+    emergencyAlert,
     error,
     rawEvents,
   } = state;
@@ -204,6 +206,32 @@ export default function DevLive() {
           </span>
         )}
       </div>
+
+      {/* ── Emergency alert ── */}
+      {emergencyAlert && (
+        <div className="flex items-start gap-3 rounded-md bg-error px-4 py-3 text-inverse">
+          <span className="text-lg leading-none">🚨</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-bold uppercase tracking-wide font-mono">
+              Emergency alert — {emergencyAlert.severity}
+            </span>
+            <span className="text-sm font-body">{emergencyAlert.reason}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Active tool call ── */}
+      {activeToolCall && (
+        <div className="flex items-center gap-2 rounded-md bg-highlight border border-subtle px-4 py-2 text-sm font-mono text-secondary">
+          <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+          <span className="font-bold">{activeToolCall.name}</span>
+          {Object.keys(activeToolCall.args).length > 0 && (
+            <span className="text-secondary opacity-70 truncate">
+              {JSON.stringify(activeToolCall.args)}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── Live subtitles ── */}
       <div className="grid grid-cols-2 gap-3">

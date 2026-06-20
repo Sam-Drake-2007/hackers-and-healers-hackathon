@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-from google import genai
 from google.genai import types
 import config
 import tools  # noqa: F401 — registers all tool handlers
@@ -28,7 +27,9 @@ class LiveSession:
         ) as gemini_session:
             # Prompt the model to open with a greeting.
             await gemini_session.send_client_content(
-                turns={"parts": [{"text": "Please begin the patient intake interview."}]},
+                turns={
+                    "parts": [{"text": "Please begin the patient intake interview."}]
+                },
                 turn_complete=True,
             )
 

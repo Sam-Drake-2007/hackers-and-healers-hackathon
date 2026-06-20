@@ -9,15 +9,20 @@ import type {
 
 // ── State exposed to consumers ─────────────────────────────────────────────────
 
-export type SessionStatus = "idle" | "connecting" | "connected" | "done" | "error";
+export type SessionStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "done"
+  | "error";
 
 export interface LiveSessionState {
   status: SessionStatus;
   /** Accumulated full transcript (all turns). */
   transcript: TranscriptEntry[];
-  /** What the model is saying right now (clears after each turn). */
+  /** What the model is saying right now (persists until next model turn starts). */
   currentModelSubtitle: string;
-  /** What the user is saying right now (clears after each turn). */
+  /** What the user is saying right now (persists until next user turn starts). */
   currentUserSubtitle: string;
   /** Accumulated freeform notes (latest full value from backend). */
   notes: string;
@@ -25,9 +30,17 @@ export interface LiveSessionState {
   record: PatientRecord | null;
   /** True while 24 kHz audio chunks from the model are playing. */
   isSpeaking: boolean;
+  /** The most recent tool call fired by the model, or null when idle. */
+  activeToolCall: { name: string; args: Record<string, unknown> } | null;
+  /** Set when the model triggers an emergency alert — null otherwise. */
+  emergencyAlert: { severity: "urgent" | "critical"; reason: string } | null;
   error: string | null;
   /** Every raw JSON event received — for the dev harness. */
   rawEvents: RawEvent[];
+  /** Internal: replace model subtitle on next transcript chunk instead of appending. */
+  _clearModelSubtitle: boolean;
+  /** Internal: replace user subtitle on next transcript chunk instead of appending. */
+  _clearUserSubtitle: boolean;
 }
 
 const INITIAL_STATE: LiveSessionState = {
@@ -38,8 +51,12 @@ const INITIAL_STATE: LiveSessionState = {
   notes: "",
   record: null,
   isSpeaking: false,
+  activeToolCall: null,
+  emergencyAlert: null,
   error: null,
   rawEvents: [],
+  _clearModelSubtitle: false,
+  _clearUserSubtitle: false,
 };
 
 const MAX_RAW_EVENTS = 300;
@@ -87,7 +104,9 @@ export function useLiveSession(options?: {
     setState((s) => ({ ...s, isSpeaking: true }));
 
     source.onended = () => {
-      playbackQueueRef.current = playbackQueueRef.current.filter((n) => n !== source);
+      playbackQueueRef.current = playbackQueueRef.current.filter(
+        (n) => n !== source,
+      );
       if (playbackQueueRef.current.length === 0) {
         setState((s) => ({ ...s, isSpeaking: false }));
       }
@@ -122,39 +141,69 @@ export function useLiveSession(options?: {
         switch (msg.type) {
           case "transcript": {
             const entry: TranscriptEntry = { role: msg.role, text: msg.text };
-            return {
-              ...s,
-              rawEvents,
-              transcript: [...s.transcript, entry],
-              currentModelSubtitle:
-                msg.role === "model"
-                  ? s.currentModelSubtitle + msg.text
-                  : s.currentModelSubtitle,
-              currentUserSubtitle:
-                msg.role === "user"
-                  ? s.currentUserSubtitle + msg.text
-                  : s.currentUserSubtitle,
-            };
+
+            if (msg.role === "model") {
+              return {
+                ...s,
+                rawEvents,
+                transcript: [...s.transcript, entry],
+                currentModelSubtitle: s._clearModelSubtitle
+                  ? msg.text
+                  : s.currentModelSubtitle + msg.text,
+                _clearModelSubtitle: false,
+              };
+            } else {
+              return {
+                ...s,
+                rawEvents,
+                transcript: [...s.transcript, entry],
+                currentUserSubtitle: s._clearUserSubtitle
+                  ? msg.text
+                  : s.currentUserSubtitle + msg.text,
+                _clearUserSubtitle: false,
+              };
+            }
           }
 
           case "notes":
             return { ...s, rawEvents, notes: msg.text };
 
+          case "tool_call":
+            return {
+              ...s,
+              rawEvents,
+              activeToolCall: { name: msg.name, args: msg.args },
+            };
+
           case "interrupt":
             flushPlayback();
+            // Model was cut off — clear subtitle immediately and cancel any
+            // pending clear so the next chunk starts fresh either way.
             return {
               ...s,
               rawEvents,
               currentModelSubtitle: "",
+              _clearModelSubtitle: false,
               isSpeaking: false,
             };
 
           case "turn_complete":
+            // Don't clear subtitles yet — let them persist until the next
+            // transcript chunk for each role arrives.
             return {
               ...s,
               rawEvents,
-              currentModelSubtitle: "",
-              currentUserSubtitle: "",
+              activeToolCall: null,
+              _clearModelSubtitle: true,
+              _clearUserSubtitle: true,
+            };
+
+          case "emergency_alert":
+            return {
+              ...s,
+              rawEvents,
+              emergencyAlert: { severity: msg.severity, reason: msg.reason },
+              activeToolCall: null,
             };
 
           case "session_complete":
@@ -164,6 +213,7 @@ export function useLiveSession(options?: {
               rawEvents,
               status: "done",
               record: msg.record,
+              activeToolCall: null,
             };
 
           case "error":
@@ -204,7 +254,10 @@ export function useLiveSession(options?: {
 
     try {
       // Mic access + AudioContext (must be inside a user gesture).
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false,
+      });
       micStreamRef.current = stream;
 
       const ctx = new AudioContext();

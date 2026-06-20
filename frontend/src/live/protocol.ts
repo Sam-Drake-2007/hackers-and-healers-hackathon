@@ -38,6 +38,12 @@ export interface SessionCompleteMessage {
   record: PatientRecord;
 }
 
+export interface EmergencyAlertMessage {
+  type: "emergency_alert";
+  severity: "urgent" | "critical";
+  reason: string;
+}
+
 export interface ErrorMessage {
   type: "error";
   message: string;
@@ -50,6 +56,7 @@ export type ServerMessage =
   | ToolCallMessage
   | TurnCompleteMessage
   | SessionCompleteMessage
+  | EmergencyAlertMessage
   | ErrorMessage;
 
 // ── Domain types ──────────────────────────────────────────────────────────────
