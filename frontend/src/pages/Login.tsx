@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Define the exact shape of our patient data
 interface LoginFormData {
@@ -11,6 +12,8 @@ export const Login: React.FC = () => {
     fullName: "",
     birthday: "",
   });
+
+  const navigate = useNavigate();
 
   // Type the input change event
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,7 +28,7 @@ export const Login: React.FC = () => {
     e.preventDefault();
     // Here is where you will send the data to your Python backend
     console.log("Patient attempting login:", formData);
-    alert(`Welcome, ${formData.fullName}! Initializing intake...`);
+    navigate("/Consultation");
   };
 
   return (
