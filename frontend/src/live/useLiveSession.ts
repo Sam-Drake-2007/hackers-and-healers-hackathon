@@ -272,9 +272,13 @@ export function useLiveSession(options?: {
       micSource.connect(workletNode);
       // Don't connect workletNode to destination — we don't want mic feedback.
 
-      // WebSocket.
+      // WebSocket. In production, VITE_WS_URL points directly at the backend
+      // (e.g. wss://<app>.up.railway.app/ws). In dev it's unset, so we fall
+      // back to the same-host /api path that Vite proxies to localhost:8000.
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      const ws = new WebSocket(`${proto}//${location.host}/api/ws`);
+      const wsUrl =
+        import.meta.env.VITE_WS_URL ?? `${proto}//${location.host}/api/ws`;
+      const ws = new WebSocket(wsUrl);
       ws.binaryType = "arraybuffer";
       wsRef.current = ws;
 
