@@ -23,7 +23,7 @@ npm install
 npm run dev
 ```
 
-Runs on <http://localhost:5173>. Calls to `/api/...` are proxied to the backend — no CORS setup needed.
+Runs on <http://localhost:5173>.
 
 ### Backend
 
@@ -35,6 +35,4 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Runs on <http://localhost:8000>. Health check: `GET /api/` → `{"status": "ok"}`.
-
-**WSL — selecting the interpreter in your IDE:** use `backend/.venv/bin/python3` (not the system `python3`).
+Runs on <http://localhost:8000>.
