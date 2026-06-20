@@ -118,6 +118,9 @@ h6 {
 .text-on-primary {
   color: var(--text-on-primary);
 }
+.text-inverse {
+  color: var(--text-inverse);
+}
 
 .font-heading {
   font-family: var(--font-heading);

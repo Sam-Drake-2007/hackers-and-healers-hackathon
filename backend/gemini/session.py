@@ -114,6 +114,9 @@ class LiveSession:
             while True:
                 async for msg in gemini_session.receive():
                     await self._dispatch(msg, gemini_session)
+                    # finish_interview sets this once its response is sent.
+                    if self.state.finished:
+                        return
         except asyncio.CancelledError:
             raise
         except Exception as e:

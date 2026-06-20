@@ -46,7 +46,7 @@ function TranscriptLog({ entries }: { entries: TranscriptEntry[] }) {
 
   return (
     <div className="space-y-1">
-      {entries.map((e, i) => (
+      {[...entries].reverse().map((e, i) => (
         <div key={i} className="flex gap-2 text-sm font-mono">
           <span
             className={`shrink-0 font-bold ${
@@ -58,6 +58,36 @@ function TranscriptLog({ entries }: { entries: TranscriptEntry[] }) {
           <span className="text-primary">{e.text}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ToolCallLog({ events }: { events: RawEvent[] }) {
+  const calls = events.filter(
+    (e): e is RawEvent & { data: { type: "tool_call"; name: string; args: Record<string, unknown> } } =>
+      e.data.type === "tool_call",
+  );
+
+  if (calls.length === 0)
+    return (
+      <p className="text-secondary text-sm italic">No tool calls yet.</p>
+    );
+
+  return (
+    <div className="space-y-1">
+      {[...calls].reverse().map((e, i) => {
+        const time = new Date(e.ts).toISOString().slice(11, 23);
+        const hasArgs = e.data.args && Object.keys(e.data.args).length > 0;
+        return (
+          <div key={i} className="text-xs font-mono break-all">
+            <span className="text-secondary opacity-60">{time} </span>
+            <span className="text-pastel-teal font-bold">{e.data.name}</span>
+            {hasArgs && (
+              <span className="text-primary"> {JSON.stringify(e.data.args)}</span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -200,9 +230,14 @@ export default function DevLive() {
         </pre>
       </Panel>
 
+      {/* ── Tool calls ── */}
+      <Panel title="Tool calls (newest first)">
+        <ToolCallLog events={rawEvents} />
+      </Panel>
+
       {/* ── Transcript + raw events ── */}
       <div className="grid grid-cols-2 gap-3 h-80">
-        <Panel title="Full transcript" grow>
+        <Panel title="Full transcript (newest first)" grow>
           <TranscriptLog entries={transcript} />
         </Panel>
         <Panel title="Raw WS events (newest first)" grow>

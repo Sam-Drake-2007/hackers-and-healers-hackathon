@@ -21,6 +21,9 @@ async def finish_interview(
         logger.error("finalize failed: %s", e)
         await send_to_browser({"type": "error", "message": f"Could not finalize record: {e}"})
 
+    # Signal the session to tear down once this tool response is sent.
+    state.finished = True
+
     return types.FunctionResponse(
         id=fc.id,
         name=fc.name,
