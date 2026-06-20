@@ -1,8 +1,35 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export const NotFound: React.FC = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const entries = performance.getEntriesByType("navigation") as
+        | PerformanceNavigationTiming[]
+        | undefined;
+      const navType = entries?.[0]?.type ??
+        ((performance as unknown as { navigation?: { type?: number } })
+          .navigation?.type === 1
+          ? "reload"
+          : undefined);
+      if (navType === "reload") {
+        navigate("/");
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    const key = "__404_page_active";
+    if (sessionStorage.getItem(key)) {
+      navigate("/");
+      return;
+    }
+    sessionStorage.setItem(key, "1");
+    return () => sessionStorage.removeItem(key);
+  }, [navigate]);
 
   return (
     <div

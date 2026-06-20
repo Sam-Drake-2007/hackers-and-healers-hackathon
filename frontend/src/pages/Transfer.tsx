@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export const Transfer: React.FC = () => {
@@ -6,6 +6,33 @@ export const Transfer: React.FC = () => {
   const location = useLocation();
   const patientName = location.state?.patientName || "there";
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      const entries = performance.getEntriesByType("navigation") as
+        | PerformanceNavigationTiming[]
+        | undefined;
+      const navType = entries?.[0]?.type ??
+        ((performance as unknown as { navigation?: { type?: number } })
+          .navigation?.type === 1
+          ? "reload"
+          : undefined);
+      if (navType === "reload") {
+        navigate("/");
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    const key = "__transfer_page_active";
+    if (sessionStorage.getItem(key)) {
+      navigate("/");
+      return;
+    }
+    sessionStorage.setItem(key, "1");
+    return () => sessionStorage.removeItem(key);
+  }, [navigate]);
 
   return (
     <div
