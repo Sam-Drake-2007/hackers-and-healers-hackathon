@@ -6,6 +6,8 @@
 
 EZ Check In is a simple web app that allows patients to have a quick consultation with a virtual AI assistant while they wait for their doctors appointment. This allows clinic staff to focus on more important tasks, while the repetitive questions can be asked by the AI. During the consultation, the AI takes note of the important information that is shared and then emails the doctor with a pdf file of the notes, keeping patient information organized.
 
+**IMPORTANT**: Use Headphones for Best Results
+
 ### Key Components
 
 - Login page takes name and date of birth to assign patients to the correct appointment (not implemented).
