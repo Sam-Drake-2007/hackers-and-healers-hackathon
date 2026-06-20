@@ -32,27 +32,13 @@ export const Emergency: React.FC = () => {
   }, [escalateEmergency]);
 
   useEffect(() => {
-    // If we've already escalated (either locally or because the backend
-    // finished the session), don't continue the countdown or auto-escalate.
-    if (escalated || state.status === "done" || state.record) return;
-
     if (secondsLeft <= 0) {
       handleConfirm(); // window elapsed without a cancel → real emergency
       return;
     }
     const id = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
     return () => clearTimeout(id);
-  }, [secondsLeft, handleConfirm, escalated, state.status, state.record]);
-
-  // If the backend finished the session (e.g. escalation already completed
-  // on the server), mark locally as escalated so reloads or remounts don't
-  // re-trigger an escalation attempt from the frontend timer.
-  useEffect(() => {
-    if (state.status === "done" || state.record) {
-      escalatedRef.current = true;
-      setEscalated(true);
-    }
-  }, [state.status, state.record]);
+  }, [secondsLeft, handleConfirm]);
 
   // Simulate notifying the staff dashboard when this page loads
   useEffect(() => {
