@@ -1,6 +1,6 @@
 # Hackers & Healers Hackathon
 
-> Project description goes here.
+> Gemini live integrating patient interview tool for family doctors. The tool is used to ask patients questions about their medical history, appointment reason, general questions, etc. It creates a document bsaed off that info and at the end emails it to the doctor. The doctor then can come in and see the patient as normal but saves a lot of time asking questions that the ai already answered (They look at the emailed document).
 
 ## Running the app
 
