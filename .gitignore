@@ -12,6 +12,7 @@ venv/
 # Secrets
 .env
 .env.*
+!.env.example
 
 # Editor / OS
 .DS_Store
