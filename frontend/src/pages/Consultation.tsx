@@ -117,6 +117,55 @@ export const Consultation: React.FC = () => {
           position: "relative",
         }}
       >
+        {/* =========================================
+            NEW: Privacy / Security Banner
+            ========================================= */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            paddingTop: "var(--spacing-lg)",
+            position: "absolute",
+            width: "100%",
+            zIndex: 10,
+          }}
+        >
+          <div
+            className="font-body"
+            style={{
+              backgroundColor: "var(--color-grey-200)",
+              color: "var(--text-secondary)",
+              padding: "var(--spacing-sm) var(--spacing-md)",
+              borderRadius: "var(--radius-full)",
+              fontSize: "0.85rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            }}
+          >
+            {/* Lock Icon */}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>
+              <strong>Privacy Notice:</strong> The AI will never ask for any
+              identification, and your credentials are redacted from medical
+              info shared with the AI.
+            </span>
+          </div>
+        </div>
+
         {/* AI Voice Visualizer (Centered) */}
         <div
           style={{
@@ -168,7 +217,7 @@ export const Consultation: React.FC = () => {
         </div>
 
         {/* =========================================
-            3. UPDATED: Scrolling Subtitles Area
+            Scrolling Subtitles Area
             ========================================= */}
         <div
           style={{
