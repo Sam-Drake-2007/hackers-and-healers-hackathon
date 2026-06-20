@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-bg: #0b0b0f;
+  --color-surface: #16161d;
+  --color-text: #e8e8ea;
+  --color-primary: #6366f1;
+
+  /* Radii */
+  --radius-card: 0.75rem;
+
+  /* Fonts */
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+}
