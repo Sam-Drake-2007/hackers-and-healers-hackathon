@@ -98,7 +98,9 @@ export function useLiveSession(options?: {
     for (const source of playbackQueueRef.current) {
       try {
         source.stop();
-      } catch {}
+      } catch {
+        // Already stopped or never started — nothing to clean up.
+      }
     }
     playbackQueueRef.current = [];
     nextPlayTimeRef.current = 0;
@@ -177,6 +179,24 @@ export function useLiveSession(options?: {
 
   // ── Start / stop ────────────────────────────────────────────────────────────
 
+  const stop = useCallback(() => {
+    flushPlayback();
+
+    wsRef.current?.close();
+    wsRef.current = null;
+
+    workletNodeRef.current?.disconnect();
+    workletNodeRef.current = null;
+
+    micStreamRef.current?.getTracks().forEach((t) => t.stop());
+    micStreamRef.current = null;
+
+    audioCtxRef.current?.close();
+    audioCtxRef.current = null;
+
+    setState((s) => ({ ...s, status: "idle" }));
+  }, [flushPlayback]);
+
   const start = useCallback(async () => {
     if (wsRef.current) return;
 
@@ -241,29 +261,11 @@ export function useLiveSession(options?: {
       setState((s) => ({ ...s, status: "error", error: message }));
       stop();
     }
-  }, [handleServerMessage, scheduleAudio]);
+  }, [handleServerMessage, scheduleAudio, stop]);
 
   const endSession = useCallback(() => {
     wsRef.current?.send(JSON.stringify({ type: "end_session" }));
   }, []);
-
-  const stop = useCallback(() => {
-    flushPlayback();
-
-    wsRef.current?.close();
-    wsRef.current = null;
-
-    workletNodeRef.current?.disconnect();
-    workletNodeRef.current = null;
-
-    micStreamRef.current?.getTracks().forEach((t) => t.stop());
-    micStreamRef.current = null;
-
-    audioCtxRef.current?.close();
-    audioCtxRef.current = null;
-
-    setState((s) => ({ ...s, status: "idle" }));
-  }, [flushPlayback]);
 
   // Clean up on unmount.
   useEffect(() => () => stop(), [stop]);
