@@ -2,6 +2,14 @@
 
 > Gemini live integrating patient interview tool for family doctors. The tool is used to ask patients questions about their medical history, appointment reason, general questions, etc. It creates a document bsaed off that info and at the end emails it to the doctor. The doctor then can come in and see the patient as normal but saves a lot of time asking questions that the ai already answered (They look at the emailed document).
 
+## The Idea:
+EZ Check In is a simple web app that allows patients to have a quick consultation with a virtual AI assistant while they wait for their doctors appointment. This allows clinic staff to focus on more important tasks, while the repetitive questions can be asked by the AI. During the consultation, the AI takes note of the important information that is shared and then emails the doctor with a pdf file of the notes, keeping patient information organized.
+### Key Components:
+- Login page takes name and date of birth to assign patients to the correct appointment (not implemented).
+- Consultation page allows the patient to speak with the AI, to take note of basic details that the doctor can expand on.
+  - The page also includes an emergency feature, meaning if the AI finds that you are in immediate danger, or if you click the emergency button, clinic workers will be able to help you
+- Transfer page lets you know when you have completeted the consultation and that the doctor is on the way.
+
 ## Running the app
 
 ### Frontend
